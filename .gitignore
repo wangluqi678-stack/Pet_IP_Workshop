@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+.conda/
+.idea/
+.DS_Store
+gen_comic/*
+!gen_comic/漫画示意.png
+gen_video/*
+gen_ip/*
+gen-3d/*
+upload/*
+static/materials/*
+static/upload/*
+*.mp4
+*.glb
