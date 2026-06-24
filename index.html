@@ -3339,7 +3339,7 @@
                                         <div style="font-size:12px; color:#fff; margin-bottom:4px;">正在生成短片...</div>
                                         <div class="progress-bar"><div class="progress-fill" style="width:0%;"></div></div>
                                     </div>
-                                    <video id="video-result" src="/static/gen_video/happyhorse_ade16c93-bd2a-435c-8380-c87b51645044.mp4" style="display:block; width:100%; height:100%; object-fit:cover;" controls playsinline loop muted poster="/static/happyhorse-media/first_frame.png"></video>
+                                    <video id="video-result" src="/static/demo/demo_short.mp4" style="display:block; width:100%; height:100%; object-fit:cover;" controls playsinline loop muted poster="/static/happyhorse-media/first_frame.png"></video>
                                 </div>
                                 <p style="color: var(--text-secondary); margin-bottom: 16px;">基于 Milky IP 形象，通过千问 HappyHorse-1.0-I2V（happyhorse-1.0-i2v） 自动生成卡通动漫精华短片</p>
                                 <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
@@ -4782,7 +4782,7 @@
             input.value = '';
         }
 
-        const DEMO_VIDEO_URL = '/static/gen_video/happyhorse_ade16c93-bd2a-435c-8380-c87b51645044.mp4';
+        const DEMO_VIDEO_URL = '/static/demo/demo_short.mp4';
 
         function loadDemoVideo() {
             const placeholder = document.getElementById('video-placeholder');
