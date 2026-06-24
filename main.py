@@ -36,7 +36,7 @@ load_dotenv()
 # ModelScope 魔搭 FLUX 客户端（兼容 OpenAI 接口，关闭代理）
 try:
     modelscope_client = OpenAI(
-        api_key=os.getenv("MODELSCOPE_API_KEY"),
+        api_key=os.getenv("MODELSCOPE_API_KEY", ""),
         base_url=os.getenv("MODELSCOPE_BASE_URL", "https://api-inference.modelscope.cn/v1"),
         http_client=httpx.Client(proxy=None),
     )
@@ -44,6 +44,7 @@ try:
 except Exception as e:
     print(f"[ModelScope] 初始化失败: {e}")
     modelscope_client = None
+
 
 def _compress_image(path: Path, max_size: int = 768) -> str:
     """压缩图片到 max_size×max_size，返回 base64 data URI"""
@@ -55,6 +56,7 @@ def _compress_image(path: Path, max_size: int = 768) -> str:
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=80)
     return f"data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode('ascii')}"
+
 
 def _remove_bg_and_stylize(path: Path) -> str:
     """rembg 去背景 + 轻微卡通化，返回 base64 PNG data URI"""
@@ -76,6 +78,7 @@ def _remove_bg_and_stylize(path: Path) -> str:
     buf = io.BytesIO()
     rgb.save(buf, format="PNG")
     return f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode('ascii')}"
+
 
 # ============================================================
 # 应用初始化
@@ -106,7 +109,7 @@ TRIPO_POLL_INTERVAL_SECONDS = float(os.getenv("TRIPO_POLL_INTERVAL_SECONDS", "5"
 DEFAULT_3D_SOURCE_DIR = Path(os.getenv("DEFAULT_3D_SOURCE_DIR", str(Path(__file__).parent.resolve() / "Milky酱" / "Milky酱照片")))
 DEFAULT_3D_SOURCE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
-HAPPYHORSE_API_KEY = os.getenv("HAPPYHORSE_API_KEY", "")
+HAPPYHORSE_API_KEY = os.getenv("HAPPYHORSE_API_KEY", os.getenv("DASHSCOPE_API_KEY", ""))
 HAPPYHORSE_BASE_URL = os.getenv("HAPPYHORSE_BASE_URL", "https://ws-z2lqx5wip4a51hs5.ap-southeast-1.maas.aliyuncs.com/api/v1").rstrip("/")
 HAPPYHORSE_MODEL = os.getenv("HAPPYHORSE_MODEL", "happyhorse-1.0-i2v")
 HAPPYHORSE_VIDEO_RATIO = os.getenv("HAPPYHORSE_VIDEO_RATIO", "1280:720")
@@ -133,9 +136,6 @@ DATA_FILE = BASE_DIR / "data.json"         # 持久化数据文件
 # 确保所有目录存在
 for d in DIRS.values():
     d.mkdir(parents=True, exist_ok=True)
-
-# 异步任务存储（用于 Tripo3D / HappyHorse 等长时间任务）
-_tasks: dict[str, dict] = {}
 
 # 静态文件路由（用于前端直接访问图片/文件）
 for mount_path, dir_path in [
@@ -233,9 +233,9 @@ class SimpleDB:
         self._videos = []
         self._models_3d = []
         self._ip_profile = {
-            "name": "Milky酱",
+            "name": "喵小懒",
             "style": "治愈系 / 萌趣 / 日常生活",
-            "bio": "Milky是一只自带镜头感的小猫咪，圆圆的眼神和软乎乎的日常就是她的招牌。她有点好奇、有点黏人，也很会把普通的一天过成可爱的高光瞬间。作为专属宠物IP，Milky适合发展成治愈系头像、漫画主角、表情包和潮玩形象。",
+            "bio": "一只热爱阳光和美食的橘猫，白天喜欢趴在窗台看风景，晚上变身夜行探险家。虽然看起来懒洋洋的，但对美食有着敏锐的嗅觉和执着。",
             "avatar_url": "",
             "avatar_material_id": None,
             "updated_at": "",
@@ -508,29 +508,28 @@ def generate_unique_filename(original_name: str) -> str:
 # ============================================================
 # 动态素材库 · Milky 相册种子数据（首次启动导入，使列表由后端统一管理）
 # ============================================================
-DEMO_MATERIALS_DIR = BASE_DIR / "Milky酱" / "demo_materials"
+DEMO_MATERIALS_DIR = BASE_DIR / "static" / "materials"
 DEMO_MATERIALS_META = [
-    ("1.jpg",  "思考",   "安静"),
-    ("2.jpg",  "撒娇",     "开心"),
-    ("4.jpg",  "晒太阳",     "兴奋"),
-    ("5.jpg",  "晒太阳",     "安静"),
-    ("6.jpeg", "发呆",     "好奇"),
+    ("1.jpg",  "晒太阳",   "开心"),
+    ("2.jpg",  "发呆",     "安静"),
+    ("3.jpg",  "玩耍",     "兴奋"),
+    ("4.jpg",  "打盹",     "困倦"),
+    ("5.jpg",  "撒娇",     "开心"),
+    ("6.jpeg", "好奇",     "好奇"),
     ("7.jpg",  "拜年",     "开心"),
-    ("8.jpg",  "迷倒路人", "开心"),
-    ("9.jpg",  "思考",     "郁闷"),
-    ("10.jpg", "睡觉",     "安静"),
+    ("8.jpg",  "迷倒路人", "兴奋"),
+    ("9.jpg",  "摆件",     "安静"),
+    ("10.jpg", "散步",     "开心"),
 ]
 DEMO_MATERIAL_SCENE = "Milky相册"
 
 
 def seed_demo_materials():
-    """启动时把 demo 照片复制到 upload/ 并重建素材库记录（适配 Railway 临时文件系统，每次重启自动恢复）。"""
+    """首次启动把 static/materials 下的 Milky 照片导入素材库（已导入则跳过）。"""
+    if any(m.get("scene") == DEMO_MATERIAL_SCENE for m in db.get_materials()):
+        return
     if not DEMO_MATERIALS_DIR.exists():
         return
-
-    # 清理旧 demo 记录（Railway 重启后 data.json 可能残留指向已丢失文件的旧记录）
-    db._materials[:] = [m for m in db._materials if m.get("scene") != DEMO_MATERIAL_SCENE]
-
     seeded = 0
     for fname, behavior, emotion in DEMO_MATERIALS_META:
         src = DEMO_MATERIALS_DIR / fname
@@ -630,7 +629,7 @@ SILICONFLOW_IMAGE_MODEL = os.getenv("SILICONFLOW_IMAGE_MODEL", "Tongyi-MAI/Z-Ima
 SILICONFLOW_VL_MODEL = os.getenv("SILICONFLOW_VL_MODEL", "Qwen/Qwen3-VL-8B-Instruct")
 
 # Ark/火山引擎 Seedream
-ARK_API_KEY = os.getenv("ARK_API_KEY", "")
+ARK_API_KEY = os.getenv("ARK_API_KEY", "ark-bb8b2c5c-94f9-45a7-b8b1-9db6187d8721-4b27d")
 ARK_BASE_URL = os.getenv("ARK_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3")
 ARK_MODEL = os.getenv("ARK_MODEL", "doubao-seedream-4-5-251128")
 try:
@@ -639,7 +638,6 @@ try:
 except Exception as e:
     print(f"[Ark] 初始化失败: {e}")
     ark_client = None
-
 
 async def call_siliconflow_vl_api(
     prompt: str, image_path: Path, style: str,
@@ -836,6 +834,7 @@ def _latest_material_image_path() -> Optional[Path]:
             if p.exists():
                 return p
     return None
+
 
 def _extract_tripo_data(payload: dict) -> dict:
     if not isinstance(payload, dict):
@@ -1085,6 +1084,12 @@ def _pick_default_ip_image() -> Optional[Path]:
         if avatar_path.exists():
             return avatar_path
     return None
+
+
+def _file_to_data_uri(path: Path) -> str:
+    mime = mimetypes.guess_type(str(path))[0] or "image/png"
+    data = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime};base64,{data}"
 
 
 def _file_to_public_media_url(path: Path) -> str:
@@ -1438,7 +1443,6 @@ async def download_material(filename: str):
 
 
 # ==================== AI 生成：IP 形象 ====================
-
 @app.get("/api/generate/ip")
 async def list_ip_images():
     """获取已生成的 IP 形象列表"""
@@ -1611,17 +1615,32 @@ class GenerateGoodsRequest(BaseModel):
 
 @app.post("/api/generate/goods")
 async def generate_goods(req: GenerateGoodsRequest):
-    """异步提交周边生成任务，立即返回 task_id（避免 Railway 30s 超时断开连接）。"""
-    task_id = str(uuid.uuid4())
-    _tasks[task_id] = {"status": "pending", "result": None, "error": None}
-    asyncio.create_task(_run_goods_task(task_id, req))
-    return {"code": 200, "task_id": task_id, "message": "周边生成任务已提交，请轮询状态"}
-
-
-async def _run_goods_task(task_id: str, req: GenerateGoodsRequest):
-    """后台执行 Seedream 周边生成"""
+    print("\n【GOODS】Seedream 周边设计")
     output_dir = DIRS["gen_ip"]
     product_cn = GOODS_NAMES.get(req.product, "周边")
+
+    latest_image = _latest_material_image_path()
+    if not latest_image:
+        return {"code": 400, "message": "素材库没有图片"}
+
+    # 准备两张图
+    sample_path = _goods_sample_path(req.product)
+    images = []
+    if sample_path:
+        with open(sample_path, "rb") as f:
+            images.append(f"data:image/png;base64,{base64.b64encode(f.read()).decode()}")
+    with open(latest_image, "rb") as f:
+        mime = "image/png" if latest_image.suffix.lower() == ".png" else "image/jpeg"
+        images.append(f"data:{mime};base64,{base64.b64encode(f.read()).decode()}")
+
+    # VL 分析猫
+    cat_desc = await call_siliconflow_vl_api(
+        prompt="", image_path=latest_image, style="",
+        instruction_override="Describe this cat in English: fur color, markings, eye color, ears, face, body. Under 50 words.",
+    )
+    cat_desc = cat_desc.strip()
+    print(f"  Cat: {cat_desc[:100]}...")
+
     prompt = req.prompt or (
         f"图1是产品参考图，图2是猫的照片。"
         f"请学习图1的产品风格、材质、光影和构图，保持这些完全不变。"
@@ -1629,80 +1648,33 @@ async def _run_goods_task(task_id: str, req: GenerateGoodsRequest):
         f"将图2的猫画成软萌可爱的卡通IP风格，线条柔和，配色温暖，"
         f"风格与图1原本的产品图保持一致。纯白背景，高清产品摄影。"
     )
+
+    print("  Seedream 生图中...")
     try:
-        _tasks[task_id]["status"] = "processing"
-
-        latest_image = _latest_material_image_path()
-        if not latest_image:
-            raise Exception("素材库没有图片")
-
-        # 准备两张图
-        sample_path = _goods_sample_path(req.product)
-        images = []
-        if sample_path:
-            with open(sample_path, "rb") as f:
-                images.append(f"data:image/png;base64,{base64.b64encode(f.read()).decode()}")
-        with open(latest_image, "rb") as f:
-            mime = "image/png" if latest_image.suffix.lower() == ".png" else "image/jpeg"
-            images.append(f"data:{mime};base64,{base64.b64encode(f.read()).decode()}")
-
-        # VL 分析猫（增强 prompt）
-        cat_desc = await call_siliconflow_vl_api(
-            prompt="", image_path=latest_image, style="",
-            instruction_override="Describe this cat in English: fur color, markings, eye color, ears, face, body. Under 50 words.",
+        resp = ark_client.images.generate(
+            model=ARK_MODEL,
+            prompt=prompt,
+            size="2K",
+            response_format="url",
+            extra_body={
+                "image": images,
+                "watermark": True,
+                "sequential_image_generation": "disabled",
+            },
         )
-        cat_desc = cat_desc.strip()
-
-        print(f"  [{task_id[:8]}] Seedream 生图中...")
-        headers = {
-            "Authorization": f"Bearer {ARK_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": ARK_MODEL,
-            "prompt": prompt,
-            "size": "1920x1920",
-            "response_format": "url",
-            "image": images,
-        }
-
-        async with httpx.AsyncClient(timeout=120) as client:
-            resp = await client.post(
-                f"{ARK_BASE_URL}/images/generations",
-                json=payload,
-                headers=headers
-            )
-            if resp.status_code != 200:
-                raise Exception(f"Seedream 返回 {resp.status_code}: {resp.text[:300]}")
-            data = resp.json()
-
-        image_url = data["data"][0]["url"]
+        image_url = resp.data[0].url
         async with httpx.AsyncClient() as hc:
-            ir = await hc.get(image_url)
-            ir.raise_for_status()
+            ir = await hc.get(image_url); ir.raise_for_status()
         fname = f"goods_{uuid.uuid4().hex[:8]}.png"
         (output_dir / fname).write_bytes(ir.content)
-        print(f"  [{task_id[:8]}] \u2705 {fname}")
-
-        item = db.add_ip_image(fname, prompt, f"周边\u00b7{product_cn}")
-        _tasks[task_id] = {"status": "completed", "result": item, "error": None}
+        print(f"  \u2705 {fname}")
     except Exception as e:
-        print(f"  [{task_id[:8]}] \u274c {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"  \u274c {e}")
         fname = f"goods_{uuid.uuid4().hex[:8]}.svg"
         generate_placeholder_image(output_dir / fname, 512, 512, product_cn)
-        item = db.add_ip_image(fname, prompt, f"周边\u00b7{product_cn}")
-        _tasks[task_id] = {"status": "completed", "result": item, "error": None}
 
-
-@app.get("/api/generate/goods/task/{task_id}")
-async def get_goods_task_status(task_id: str):
-    """查询周边生成异步任务状态"""
-    task = _tasks.get(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
-    return {"code": 200, "data": task}
+    db.add_ip_image(fname, prompt, f"周边\u00b7{product_cn}") if fname else None
+    return {"code": 200, "message": "生成成功", "data": {"product": req.product, "name": product_cn, "filename": fname, "url": f"/static/gen_ip/{fname}" if fname else ""}}
 
 
 @app.get("/api/download/goods/{filename}")
@@ -1736,49 +1708,20 @@ async def delete_goods(goods_id: int):
             return {"code": 200, "message": "删除成功"}
     raise HTTPException(status_code=404, detail="周边不存在")
 
-
-@app.get("/api/generate/story")
-async def list_stories():
-    """获取已生成的故事列表"""
-    return {"code": 200, "data": db.get_stories()}
-
-
 # ==================== AI 生成：精华短片（HappyHorse） ====================
 
 @app.post("/api/generate/video")
 async def generate_video(req: GenerateVideoRequest):
-    """异步提交精华短片生成任务，立即返回 task_id。"""
-    task_id = str(uuid.uuid4())
-    _tasks[task_id] = {"status": "pending", "result": None, "error": None}
-    asyncio.create_task(_run_video_task(task_id, req))
-    return {"code": 200, "task_id": task_id, "message": "视频生成任务已提交，请轮询状态"}
-
-
-async def _run_video_task(task_id: str, req: GenerateVideoRequest):
-    """后台执行 HappyHorse 视频生成"""
-    try:
-        _tasks[task_id]["status"] = "processing"
-        result = await call_happyhorse_video_api(req.prompt, req.duration, req.ratio, DIRS["gen_video"])
-        item = db.add_video(
-            filename=result["filename"],
-            prompt=result["prompt"],
-            source_image=result["source_image"],
-            provider_task_id=result["task_id"],
-            provider=result.get("provider", "HappyHorse"),
-        )
-        _tasks[task_id] = {"status": "completed", "result": item, "error": None}
-    except Exception as e:
-        _tasks[task_id] = {"status": "failed", "result": None, "error": str(e)}
-        print(f"[_run_video_task] {task_id} 失败: {e}")
-
-
-@app.get("/api/generate/video/task/{task_id}")
-async def get_video_task_status(task_id: str):
-    """查询视频生成异步任务状态"""
-    task = _tasks.get(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
-    return {"code": 200, "data": task}
+    """调用千问 HappyHorse-1.0-I2V（happyhorse-1.0-i2v） 生成 Milky 卡通动漫精华短片。"""
+    result = await call_happyhorse_video_api(req.prompt, req.duration, req.ratio, DIRS["gen_video"])
+    item = db.add_video(
+        filename=result["filename"],
+        prompt=result["prompt"],
+        source_image=result["source_image"],
+        provider_task_id=result["task_id"],
+        provider=result.get("provider", "HappyHorse"),
+    )
+    return {"code": 200, "message": "精华短片生成成功", "data": item}
 
 
 @app.get("/api/generate/video")
@@ -1791,7 +1734,7 @@ async def list_videos():
 
 @app.post("/api/generate/3d")
 async def generate_3d(req: Generate3DRequest):
-    """异步提交 3D 生成任务，立即返回 task_id。"""
+    """根据选中的宠物图片素材，调用 Tripo3D 生成 3D 模型文件。"""
     target_material_id = req.material_ids[0] if req.material_ids else import_default_3d_source_material()
     if not target_material_id:
         materials = [m for m in db.get_materials() if m.get("type") == "image"]
@@ -1799,43 +1742,23 @@ async def generate_3d(req: Generate3DRequest):
     if not target_material_id:
         raise HTTPException(status_code=400, detail="请选择至少一张宠物图片素材")
 
-    task_id = str(uuid.uuid4())
-    _tasks[task_id] = {"status": "pending", "result": None, "error": None}
-    asyncio.create_task(_run_tripo_task(task_id, int(target_material_id), DIRS["gen_3d"], req))
-    return {"code": 200, "task_id": task_id, "message": "3D 生成任务已提交，请轮询状态"}
+    output_dir = DIRS["gen_3d"]
+    result = await call_tripo_image_to_3d(int(target_material_id), output_dir)
+    item = db.add_3d_model(
+        filename=result["primary_filename"],
+        prompt=req.prompt,
+        pose=req.pose,
+        format_type=result["format"],
+        extra={
+            "stl_filename": result["files"].get("stl", ""),
+            "3mf_filename": result["files"].get("3mf", ""),
+            "glb_filename": result["files"].get("glb", ""),
+            "tripo_task_id": result["task_id"],
+            "source_material_id": int(target_material_id),
+        },
+    )
 
-
-async def _run_tripo_task(task_id: str, material_id: int, output_dir: Path, req: Generate3DRequest):
-    """后台执行 Tripo3D 生成，完成后更新任务状态"""
-    try:
-        _tasks[task_id]["status"] = "processing"
-        result = await call_tripo_image_to_3d(material_id, output_dir)
-        item = db.add_3d_model(
-            filename=result["primary_filename"],
-            prompt=req.prompt,
-            pose=req.pose,
-            format_type=result["format"],
-            extra={
-                "stl_filename": result["files"].get("stl", ""),
-                "3mf_filename": result["files"].get("3mf", ""),
-                "glb_filename": result["files"].get("glb", ""),
-                "tripo_task_id": result["task_id"],
-                "source_material_id": material_id,
-            },
-        )
-        _tasks[task_id] = {"status": "completed", "result": item, "error": None}
-    except Exception as e:
-        _tasks[task_id] = {"status": "failed", "result": None, "error": str(e)}
-        print(f"[_run_tripo_task] {task_id} 失败: {e}")
-
-
-@app.get("/api/generate/3d/task/{task_id}")
-async def get_tripo_task_status(task_id: str):
-    """查询 3D 生成异步任务状态"""
-    task = _tasks.get(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="任务不存在")
-    return {"code": 200, "data": task}
+    return {"code": 200, "message": "3D 模型生成成功", "data": item}
 
 
 @app.get("/api/generate/3d")
