@@ -1611,32 +1611,17 @@ class GenerateGoodsRequest(BaseModel):
 
 @app.post("/api/generate/goods")
 async def generate_goods(req: GenerateGoodsRequest):
-    print("\n【GOODS】Seedream 周边设计")
+    """异步提交周边生成任务，立即返回 task_id（避免 Railway 30s 超时断开连接）。"""
+    task_id = str(uuid.uuid4())
+    _tasks[task_id] = {"status": "pending", "result": None, "error": None}
+    asyncio.create_task(_run_goods_task(task_id, req))
+    return {"code": 200, "task_id": task_id, "message": "周边生成任务已提交，请轮询状态"}
+
+
+async def _run_goods_task(task_id: str, req: GenerateGoodsRequest):
+    """后台执行 Seedream 周边生成"""
     output_dir = DIRS["gen_ip"]
     product_cn = GOODS_NAMES.get(req.product, "周边")
-
-    latest_image = _latest_material_image_path()
-    if not latest_image:
-        return {"code": 400, "message": "素材库没有图片"}
-
-    # 准备两张图
-    sample_path = _goods_sample_path(req.product)
-    images = []
-    if sample_path:
-        with open(sample_path, "rb") as f:
-            images.append(f"data:image/png;base64,{base64.b64encode(f.read()).decode()}")
-    with open(latest_image, "rb") as f:
-        mime = "image/png" if latest_image.suffix.lower() == ".png" else "image/jpeg"
-        images.append(f"data:{mime};base64,{base64.b64encode(f.read()).decode()}")
-
-    # VL 分析猫
-    cat_desc = await call_siliconflow_vl_api(
-        prompt="", image_path=latest_image, style="",
-        instruction_override="Describe this cat in English: fur color, markings, eye color, ears, face, body. Under 50 words.",
-    )
-    cat_desc = cat_desc.strip()
-    print(f"  Cat: {cat_desc[:100]}...")
-
     prompt = req.prompt or (
         f"图1是产品参考图，图2是猫的照片。"
         f"请学习图1的产品风格、材质、光影和构图，保持这些完全不变。"
@@ -1644,33 +1629,80 @@ async def generate_goods(req: GenerateGoodsRequest):
         f"将图2的猫画成软萌可爱的卡通IP风格，线条柔和，配色温暖，"
         f"风格与图1原本的产品图保持一致。纯白背景，高清产品摄影。"
     )
-
-    print("  Seedream 生图中...")
     try:
-        resp = ark_client.images.generate(
-            model=ARK_MODEL,
-            prompt=prompt,
-            size="2K",
-            response_format="url",
-            extra_body={
-                "image": images,
-                "watermark": True,
-                "sequential_image_generation": "disabled",
-            },
+        _tasks[task_id]["status"] = "processing"
+
+        latest_image = _latest_material_image_path()
+        if not latest_image:
+            raise Exception("素材库没有图片")
+
+        # 准备两张图
+        sample_path = _goods_sample_path(req.product)
+        images = []
+        if sample_path:
+            with open(sample_path, "rb") as f:
+                images.append(f"data:image/png;base64,{base64.b64encode(f.read()).decode()}")
+        with open(latest_image, "rb") as f:
+            mime = "image/png" if latest_image.suffix.lower() == ".png" else "image/jpeg"
+            images.append(f"data:{mime};base64,{base64.b64encode(f.read()).decode()}")
+
+        # VL 分析猫（增强 prompt）
+        cat_desc = await call_siliconflow_vl_api(
+            prompt="", image_path=latest_image, style="",
+            instruction_override="Describe this cat in English: fur color, markings, eye color, ears, face, body. Under 50 words.",
         )
-        image_url = resp.data[0].url
+        cat_desc = cat_desc.strip()
+
+        print(f"  [{task_id[:8]}] Seedream 生图中...")
+        headers = {
+            "Authorization": f"Bearer {ARK_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": ARK_MODEL,
+            "prompt": prompt,
+            "size": "1920x1920",
+            "response_format": "url",
+            "image": images,
+        }
+
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                f"{ARK_BASE_URL}/images/generations",
+                json=payload,
+                headers=headers
+            )
+            if resp.status_code != 200:
+                raise Exception(f"Seedream 返回 {resp.status_code}: {resp.text[:300]}")
+            data = resp.json()
+
+        image_url = data["data"][0]["url"]
         async with httpx.AsyncClient() as hc:
-            ir = await hc.get(image_url); ir.raise_for_status()
+            ir = await hc.get(image_url)
+            ir.raise_for_status()
         fname = f"goods_{uuid.uuid4().hex[:8]}.png"
         (output_dir / fname).write_bytes(ir.content)
-        print(f"  \u2705 {fname}")
+        print(f"  [{task_id[:8]}] \u2705 {fname}")
+
+        item = db.add_ip_image(fname, prompt, f"周边\u00b7{product_cn}")
+        _tasks[task_id] = {"status": "completed", "result": item, "error": None}
     except Exception as e:
-        print(f"  \u274c {e}")
+        print(f"  [{task_id[:8]}] \u274c {e}")
+        import traceback
+        traceback.print_exc()
         fname = f"goods_{uuid.uuid4().hex[:8]}.svg"
         generate_placeholder_image(output_dir / fname, 512, 512, product_cn)
+        item = db.add_ip_image(fname, prompt, f"周边\u00b7{product_cn}")
+        _tasks[task_id] = {"status": "completed", "result": item, "error": None}
 
-    db.add_ip_image(fname, prompt, f"周边\u00b7{product_cn}") if fname else None
-    return {"code": 200, "message": "生成成功", "data": {"product": req.product, "name": product_cn, "filename": fname, "url": f"/static/gen_ip/{fname}" if fname else ""}}
+
+@app.get("/api/generate/goods/task/{task_id}")
+async def get_goods_task_status(task_id: str):
+    """查询周边生成异步任务状态"""
+    task = _tasks.get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    return {"code": 200, "data": task}
 
 
 @app.get("/api/download/goods/{filename}")
