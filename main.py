@@ -473,7 +473,7 @@ def generate_unique_filename(original_name: str) -> str:
 # ============================================================
 # 动态素材库 · Milky 相册种子数据（首次启动导入，使列表由后端统一管理）
 # ============================================================
-DEMO_MATERIALS_DIR = BASE_DIR / "static" / "materials"
+DEMO_MATERIALS_DIR = BASE_DIR / "Milky酱" / "demo_materials"
 DEMO_MATERIALS_META = [
     ("1.jpg",  "晒太阳",   "开心"),
     ("2.jpg",  "发呆",     "安静"),
@@ -488,13 +488,11 @@ DEMO_MATERIALS_META = [
 ]
 DEMO_MATERIAL_SCENE = "Milky相册"
 
-
 def seed_demo_materials():
-    """首次启动把 static/materials 下的 Milky 照片导入素材库（已导入则跳过）。"""
-    if any(m.get("scene") == DEMO_MATERIAL_SCENE for m in db.get_materials()):
-        return
+    """启动时把 demo 照片复制到 upload/ 并导入素材库（文件丢失时自动补全，适配 Railway 临时文件系统）。"""
     if not DEMO_MATERIALS_DIR.exists():
         return
+    existing = {m.get("original_name", "") for m in db.get_materials() if m.get("scene") == DEMO_MATERIAL_SCENE}
     seeded = 0
     for fname, behavior, emotion in DEMO_MATERIALS_META:
         src = DEMO_MATERIALS_DIR / fname
@@ -507,6 +505,8 @@ def seed_demo_materials():
         except Exception as e:
             print(f"[SEED] 复制失败 {src}: {e}")
             continue
+        if fname in existing:
+            continue  # 已有 DB 记录，跳过
         ext = src.suffix.lower()
         file_type = "image/jpeg" if ext in (".jpg", ".jpeg") else "image/png"
         item = db.add_material(
@@ -523,7 +523,6 @@ def seed_demo_materials():
     if seeded:
         db._save()
         print(f"[SEED] 已导入 {seeded} 张 Milky 相册素材")
-
 
 def import_default_3d_source_material() -> Optional[int]:
     """从 Milky 照片目录导入一张图片作为 3D 生成默认素材。"""
