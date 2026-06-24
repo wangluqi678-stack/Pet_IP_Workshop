@@ -3299,7 +3299,7 @@
                                 <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar(this)">
                                 <div class="persona-body">
                                     <div class="persona-eyebrow">动态 IP 人设</div>
-                                    <span class="pa-name" id="ip-name-text">喵小懒</span>
+                                    <span class="pa-name" id="ip-name-text">Milky酱</span>
                                     <div class="persona-headtags">
                                         <span class="tag-style" id="ip-style-text">治愈系 / 萌趣 / 日常生活</span>
                                     </div>
@@ -4071,7 +4071,7 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">角色名称</label>
-                    <input type="text" class="form-input" id="edit-profile-name" value="喵小懒">
+                    <input type="text" class="form-input" id="edit-profile-name" value="Milky酱">
                 </div>
                 <div class="form-group">
                     <label class="form-label">风格定位</label>
@@ -4636,7 +4636,7 @@
         // IP 创作 & 内容生成
         // ============================================================
         let currentIPProfile = {
-            name: '喵小懒',
+            name: 'Milky酱',
             style: '治愈系 / 萌趣 / 日常生活',
             bio: '一只热爱阳光和美食的橘猫，白天喜欢趴在窗台看风景，晚上变身夜行探险家。虽然看起来懒洋洋的，但对美食有着敏锐的嗅觉和执着。',
             avatar_url: ''
@@ -4650,7 +4650,7 @@
             const img = document.getElementById('avatar-img');
             const emoji = document.getElementById('avatar-emoji');
 
-            if (nameEl) nameEl.textContent = currentIPProfile.name || '喵小懒';
+            if (nameEl) nameEl.textContent = currentIPProfile.name || 'Milky酱';
             if (styleEl) styleEl.textContent = currentIPProfile.style || '治愈系 / 萌趣 / 日常生活';
             if (bioEl) bioEl.textContent = currentIPProfile.bio || '暂无简介';
 
@@ -4732,14 +4732,14 @@
         }
 
         function editIPProfile() {
-            document.getElementById('edit-profile-name').value = currentIPProfile.name || '喵小懒';
+            document.getElementById('edit-profile-name').value = currentIPProfile.name || 'Milky酱';
             document.getElementById('edit-profile-style').value = currentIPProfile.style || '治愈系 / 萌趣 / 日常生活';
             document.getElementById('edit-profile-bio').value = currentIPProfile.bio || '';
             showModal('modal-edit-profile');
         }
 
         async function saveIPProfile() {
-            const name = document.getElementById('edit-profile-name').value.trim() || '喵小懒';
+            const name = document.getElementById('edit-profile-name').value.trim() || 'Milky酱';
             const style = document.getElementById('edit-profile-style').value.trim() || '治愈系 / 萌趣 / 日常生活';
             const bio = document.getElementById('edit-profile-bio').value.trim() || '暂无简介';
 
@@ -4886,7 +4886,7 @@
                     const sres = await api('/api/generate/story', {
                         method: 'POST',
                         body: JSON.stringify({
-                            pet_name: (currentIPProfile && currentIPProfile.name) || '喵小懒',
+                            pet_name: (currentIPProfile && currentIPProfile.name) || 'Milky酱',
                             personality: ['慵懒', '好奇'],
                             style: (currentIPProfile && currentIPProfile.style) || '治愈'
                         })
@@ -4930,7 +4930,7 @@
             try {
                 const res = await api('/api/generate/story', {
                     method: 'POST',
-                    body: JSON.stringify({ pet_name: currentIPProfile.name || '喵小懒', personality: ['慵懒', '好奇'], style: currentIPProfile.style || '温暖治愈' })
+                    body: JSON.stringify({ pet_name: currentIPProfile.name || 'Milky酱', personality: ['慵懒', '好奇'], style: currentIPProfile.style || '温暖治愈' })
                 });
                 if (res.data && res.data.content) {
                     const bio = res.data.content.slice(0, 200) + '...';
