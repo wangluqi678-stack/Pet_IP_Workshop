@@ -656,13 +656,13 @@ async def call_jimeng_api(prompt: str, style: str, output_dir: Path, prefix: str
 #   call_siliconflow_api     —— 图生图生成图片（默认 FLUX.1-dev，可配 SILICONFLOW_IMAGE_MODEL）
 # ============================================================
 
-# 硅基流动 API Key（复刻自 main(1).py）
+# 硅基流动 API Key
 SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
-SILICONFLOW_IMAGE_MODEL = os.getenv("SILICONFLOW_IMAGE_MODEL", "Tongyi-MAI/Z-Image")
+SILICONFLOW_IMAGE_MODEL = os.getenv("SILICONFLOW_IMAGE_MODEL", "Tongyi-MAI/Z-Image-Turbo")
 SILICONFLOW_VL_MODEL = os.getenv("SILICONFLOW_VL_MODEL", "Qwen/Qwen3-VL-8B-Instruct")
 
 # Ark/火山引擎 Seedream
-ARK_API_KEY = os.getenv("ARK_API_KEY", "ark-bb8b2c5c-94f9-45a7-b8b1-9db6187d8721-4b27d")
+ARK_API_KEY = os.getenv("ARK_API_KEY", "")
 ARK_BASE_URL = os.getenv("ARK_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3")
 ARK_MODEL = os.getenv("ARK_MODEL", "doubao-seedream-4-5-251128")
 try:
@@ -858,17 +858,6 @@ async def call_siliconflow_api(
         filenames.append(filename)
 
     return filenames
-
-
-
-def _latest_material_image_path() -> Optional[Path]:
-    """取素材库中最新的一张图片，作为看图/图生图的参考素材。"""
-    for m in db.get_materials():
-        if m.get("type") == "image":
-            p = DIRS["upload"] / m["filename"]
-            if p.exists():
-                return p
-    return None
 
 
 def _extract_tripo_data(payload: dict) -> dict:
