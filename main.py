@@ -233,9 +233,9 @@ class SimpleDB:
         self._videos = []
         self._models_3d = []
         self._ip_profile = {
-            "name": "喵小懒",
+            "name": "Milky酱",
             "style": "治愈系 / 萌趣 / 日常生活",
-            "bio": "一只热爱阳光和美食的橘猫，白天喜欢趴在窗台看风景，晚上变身夜行探险家。虽然看起来懒洋洋的，但对美食有着敏锐的嗅觉和执着。",
+            "bio": "Milky是一只自带镜头感的小猫咪，圆圆的眼神和软乎乎的日常就是她的招牌。她有点好奇、有点黏人，也很会把普通的一天过成可爱的高光瞬间。作为专属宠物IP，Milky适合发展成治愈系头像、漫画主角、表情包和潮玩形象。",
             "avatar_url": "",
             "avatar_material_id": None,
             "updated_at": "",
