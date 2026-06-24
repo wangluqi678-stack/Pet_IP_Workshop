@@ -1697,9 +1697,9 @@ async def generate_goods(req: GenerateGoodsRequest):
         payload = {
             "model": ARK_MODEL,
             "prompt": prompt,
-            "size": "1024x1024",
+            "size": "1920x1920", 
             "response_format": "url",
-            "image": images,
+           "image": images[-1],
         }
         async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(
