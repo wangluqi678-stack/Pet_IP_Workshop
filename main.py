@@ -475,16 +475,15 @@ def generate_unique_filename(original_name: str) -> str:
 # ============================================================
 DEMO_MATERIALS_DIR = BASE_DIR / "Milky酱" / "demo_materials"
 DEMO_MATERIALS_META = [
-    ("1.jpg",  "晒太阳",   "开心"),
-    ("2.jpg",  "发呆",     "安静"),
-    ("3.jpg",  "玩耍",     "兴奋"),
-    ("4.jpg",  "打盹",     "困倦"),
-    ("5.jpg",  "撒娇",     "开心"),
-    ("6.jpeg", "好奇",     "好奇"),
+    ("1.jpg",  "思考",   "安静"),
+    ("2.jpg",  "撒娇",     "开心"),
+    ("4.jpg",  "晒太阳",     "兴奋"),
+    ("5.jpg",  "晒太阳",     "安静"),
+    ("6.jpeg", "发呆",     "好奇"),
     ("7.jpg",  "拜年",     "开心"),
-    ("8.jpg",  "迷倒路人", "兴奋"),
-    ("9.jpg",  "摆件",     "安静"),
-    ("10.jpg", "散步",     "开心"),
+    ("8.jpg",  "迷倒路人", "开心"),
+    ("9.jpg",  "思考",     "郁闷"),
+    ("10.jpg", "睡觉",     "安静"),
 ]
 DEMO_MATERIAL_SCENE = "Milky相册"
 
@@ -584,85 +583,19 @@ def generate_placeholder_image(target_path: Path, width: int = 512, height: int 
 
 
 # ============================================================
-# AI API 调用函数（通义万相 + DeepSeek）
-# ============================================================
-
-async def call_jimeng_api(prompt: str, style: str, output_dir: Path, prefix: str = "ip") -> list[str]:
-    filenames = []
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # -------- 这里填你刚复制的 ModelScope 写权限令牌 --------
-    MODELSCOPE_TOKEN = "ms-1debbc5d-96cf-49a8-9020-174b5cf47b49"
-    # ---------------------------------------------------
-
-    print("\n" + "="*60)
-    print(f"[ModelScope 生图]")
-    print(f"[DEBUG] 提示词: {prompt}")
-    print(f"[DEBUG] 风格: {style}")
-    print(f"[DEBUG] 输出目录: {output_dir}")
-    print("="*60 + "\n")
-
-    try:
-        # 用英文提示词，避免编码问题，同时适配你的漫画场景
-        full_prompt = (
-            "pet daily life, four-panel comic, Japanese manga style, simple cartoon, cute, bright colors, clean lines, high definition, 1024x1024"
-        )
-
-        api_url = "https://api.modelscope.cn/v1/models/AI-ModelScope/stable-diffusion-xl-base-1.0/text-to-image"
-        headers = {
-            "Authorization": f"Bearer {MODELSCOPE_TOKEN}",
-            "Content-Type": "application/json; charset=utf-8"
-        }
-        payload = {
-            "prompt": full_prompt,
-            "negative_prompt": "blurry, low quality, watermark, text, deformed",
-            "width": 1024,
-            "height": 1024,
-            "num_images": 1
-        }
-
-        print("[DEBUG] 发起请求（英文提示词，解决编码问题）...")
-        async with httpx.AsyncClient(timeout=httpx.Timeout(120, connect=15)) as client:
-            resp = await client.post(api_url, headers=headers, json=payload)
-            resp.raise_for_status()
-
-        data = resp.json()
-        image_url = data["images"][0]["url"]
-
-        filename = f"{prefix}_{uuid.uuid4().hex[:8]}.png"
-        filepath = output_dir / filename
-        async with httpx.AsyncClient() as c:
-            img_resp = await c.get(image_url)
-            img_resp.raise_for_status()
-        with open(filepath, "wb") as f:
-            f.write(img_resp.content)
-
-        filenames.append(filename)
-        print(f"[DEBUG] ✅ 生成成功：{filename}")
-
-    except Exception as e:
-        print(f"[ERROR] 生图失败：{e}")
-        filename = f"{prefix}_{uuid.uuid4().hex[:8]}.svg"
-        filepath = output_dir / filename
-        generate_placeholder_image(filepath, 512, 512, "pet daily life comic")
-        filenames.append(filename)
-
-    return filenames
-
-# ============================================================
 # 硅基流动（SiliconFlow）AI API：看图写小传 + 图生图
 # 从 main(1).py 复刻：
 #   call_siliconflow_vl_api  —— Qwen3-VL 看宠物图生成人物小传
 #   call_siliconflow_api     —— 图生图生成图片（默认 FLUX.1-dev，可配 SILICONFLOW_IMAGE_MODEL）
 # ============================================================
 
-# 硅基流动 API Key
-SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
+# 硅基流动 API Key（复刻自 main(1).py）
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "sk-xxqkhuuywtdvelcneecidzpynbqrofrxvoejyuhxzwuhtsaw")
 SILICONFLOW_IMAGE_MODEL = os.getenv("SILICONFLOW_IMAGE_MODEL", "Tongyi-MAI/Z-Image-Turbo")
 SILICONFLOW_VL_MODEL = os.getenv("SILICONFLOW_VL_MODEL", "Qwen/Qwen3-VL-8B-Instruct")
 
 # Ark/火山引擎 Seedream
-ARK_API_KEY = os.getenv("ARK_API_KEY", "")
+ARK_API_KEY = os.getenv("ARK_API_KEY", "ark-bb8b2c5c-94f9-45a7-b8b1-9db6187d8721-4b27d")
 ARK_BASE_URL = os.getenv("ARK_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3")
 ARK_MODEL = os.getenv("ARK_MODEL", "doubao-seedream-4-5-251128")
 try:
@@ -671,6 +604,7 @@ try:
 except Exception as e:
     print(f"[Ark] 初始化失败: {e}")
     ark_client = None
+
 
 async def call_siliconflow_vl_api(
     prompt: str, image_path: Path, style: str,
@@ -859,6 +793,14 @@ async def call_siliconflow_api(
 
     return filenames
 
+def _latest_material_image_path() -> Optional[Path]:
+    """取素材库中最新的一张图片，作为看图/图生图的参考素材。"""
+    for m in db.get_materials():
+        if m.get("type") == "image":
+            p = DIRS["upload"] / m["filename"]
+            if p.exists():
+                return p
+    return None
 
 def _extract_tripo_data(payload: dict) -> dict:
     if not isinstance(payload, dict):
