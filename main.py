@@ -1700,8 +1700,6 @@ async def generate_goods(req: GenerateGoodsRequest):
             "size": "1024x1024",
             "response_format": "url",
             "image": images,
-            "watermark": True,
-            "sequential_image_generation": "disabled",
         }
         async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(
@@ -1709,7 +1707,9 @@ async def generate_goods(req: GenerateGoodsRequest):
                 json=payload,
                 headers=headers
             )
-            resp.raise_for_status()
+            if resp.status_code != 200:
+                print(f"  ❌ Seedream 返回 {resp.status_code}: {resp.text[:500]}")
+                resp.raise_for_status()
             data = resp.json()
         image_url = data["data"][0]["url"]
         async with httpx.AsyncClient() as hc:
