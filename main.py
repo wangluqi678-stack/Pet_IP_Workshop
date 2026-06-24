@@ -1690,18 +1690,28 @@ async def generate_goods(req: GenerateGoodsRequest):
 
     print("  Seedream 生图中...")
     try:
-        resp = ark_client.images.generate(
-            model=ARK_MODEL,
-            prompt=prompt,
-            size="1024x1024",
-            response_format="url",
-            extra_body={
-                "image": images,
-                "watermark": True,
-                "sequential_image_generation": "disabled",
-            },
-        )
-        image_url = resp.data[0].url
+        headers = {
+            "Authorization": f"Bearer {ARK_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": ARK_MODEL,
+            "prompt": prompt,
+            "size": "1024x1024",
+            "response_format": "url",
+            "image": images,
+            "watermark": True,
+            "sequential_image_generation": "disabled",
+        }
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                f"{ARK_BASE_URL}/images/generations",
+                json=payload,
+                headers=headers
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        image_url = data["data"][0]["url"]
         async with httpx.AsyncClient() as hc:
             ir = await hc.get(image_url); ir.raise_for_status()
         fname = f"goods_{uuid.uuid4().hex[:8]}.png"
