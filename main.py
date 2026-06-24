@@ -41,6 +41,37 @@ except Exception as e:
     print(f"[ModelScope] 初始化失败: {e}")
     modelscope_client = None
 
+def _compress_image(path: Path, max_size: int = 768) -> str:
+    """压缩图片到 max_size×max_size，返回 base64 data URI"""
+    img = Image.open(path).convert("RGB")
+    w, h = img.size
+    if w > max_size or h > max_size:
+        ratio = max_size / max(w, h)
+        img = img.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=80)
+    return f"data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode('ascii')}"
+
+def _remove_bg_and_stylize(path: Path) -> str:
+    """rembg 去背景 + 轻微卡通化，返回 base64 PNG data URI"""
+    img = Image.open(path).convert("RGBA")
+    # 去背景
+    img = remove(img)
+    # 轻微平滑 + 增强色彩
+    rgb = img.convert("RGB")
+    rgb = rgb.filter(ImageFilter.SMOOTH_MORE)
+    enhancer = ImageEnhance.Color(rgb)
+    rgb = enhancer.enhance(1.3)
+    enhancer = ImageEnhance.Contrast(rgb)
+    rgb = enhancer.enhance(1.1)
+    # 缩放到合适大小
+    w, h = rgb.size
+    if max(w, h) > 768:
+        ratio = 768 / max(w, h)
+        rgb = rgb.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+    buf = io.BytesIO()
+    rgb.save(buf, format="PNG")
+    return f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode('ascii')}"
 
 # ============================================================
 # 应用初始化
@@ -589,13 +620,13 @@ def generate_placeholder_image(target_path: Path, width: int = 512, height: int 
 #   call_siliconflow_api     —— 图生图生成图片（默认 FLUX.1-dev，可配 SILICONFLOW_IMAGE_MODEL）
 # ============================================================
 
-# 硅基流动 API Key（复刻自 main(1).py）
-SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "sk-xxqkhuuywtdvelcneecidzpynbqrofrxvoejyuhxzwuhtsaw")
+# 硅基流动 API Key
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
 SILICONFLOW_IMAGE_MODEL = os.getenv("SILICONFLOW_IMAGE_MODEL", "Tongyi-MAI/Z-Image-Turbo")
 SILICONFLOW_VL_MODEL = os.getenv("SILICONFLOW_VL_MODEL", "Qwen/Qwen3-VL-8B-Instruct")
 
 # Ark/火山引擎 Seedream
-ARK_API_KEY = os.getenv("ARK_API_KEY", "ark-bb8b2c5c-94f9-45a7-b8b1-9db6187d8721-4b27d")
+ARK_API_KEY = os.getenv("ARK_API_KEY", "")
 ARK_BASE_URL = os.getenv("ARK_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3")
 ARK_MODEL = os.getenv("ARK_MODEL", "doubao-seedream-4-5-251128")
 try:
@@ -1611,6 +1642,14 @@ async def generate_goods(req: GenerateGoodsRequest):
         mime = "image/png" if latest_image.suffix.lower() == ".png" else "image/jpeg"
         images.append(f"data:{mime};base64,{base64.b64encode(f.read()).decode()}")
 
+    # VL 分析猫
+    cat_desc = await call_siliconflow_vl_api(
+        prompt="", image_path=latest_image, style="",
+        instruction_override="Describe this cat in English: fur color, markings, eye color, ears, face, body. Under 50 words.",
+    )
+    cat_desc = cat_desc.strip()
+    print(f"  Cat: {cat_desc[:100]}...")
+
     prompt = req.prompt or (
         f"图1是产品参考图，图2是猫的照片。"
         f"请学习图1的产品风格、材质、光影和构图，保持这些完全不变。"
@@ -1621,28 +1660,18 @@ async def generate_goods(req: GenerateGoodsRequest):
 
     print("  Seedream 生图中...")
     try:
-        headers = {
-            "Authorization": f"Bearer {ARK_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": ARK_MODEL,
-            "prompt": prompt,
-            "size": "1920x1920",
-            "response_format": "url",
-            "image": images,  # 两张图：产品参考图 + 猫照片
-        }
-        async with httpx.AsyncClient(timeout=120) as client:
-            resp = await client.post(
-                f"{ARK_BASE_URL}/images/generations",
-                json=payload,
-                headers=headers
-            )
-            if resp.status_code != 200:
-                print(f"  ❌ Seedream 返回 {resp.status_code}: {resp.text[:500]}")
-                resp.raise_for_status()
-            data = resp.json()
-        image_url = data["data"][0]["url"]
+        resp = ark_client.images.generate(
+            model=ARK_MODEL,
+            prompt=prompt,
+            size="2K",
+            response_format="url",
+            extra_body={
+                "image": images,
+                "watermark": True,
+                "sequential_image_generation": "disabled",
+            },
+        )
+        image_url = resp.data[0].url
         async with httpx.AsyncClient() as hc:
             ir = await hc.get(image_url); ir.raise_for_status()
         fname = f"goods_{uuid.uuid4().hex[:8]}.png"
