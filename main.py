@@ -488,11 +488,15 @@ DEMO_MATERIALS_META = [
 ]
 DEMO_MATERIAL_SCENE = "Milky相册"
 
+
 def seed_demo_materials():
-    """启动时把 demo 照片复制到 upload/ 并导入素材库（文件丢失时自动补全，适配 Railway 临时文件系统）。"""
+    """启动时把 demo 照片复制到 upload/ 并重建素材库记录（适配 Railway 临时文件系统，每次重启自动恢复）。"""
     if not DEMO_MATERIALS_DIR.exists():
         return
-    existing = {m.get("original_name", "") for m in db.get_materials() if m.get("scene") == DEMO_MATERIAL_SCENE}
+
+    # 清理旧 demo 记录（Railway 重启后 data.json 可能残留指向已丢失文件的旧记录）
+    db._materials[:] = [m for m in db._materials if m.get("scene") != DEMO_MATERIAL_SCENE]
+
     seeded = 0
     for fname, behavior, emotion in DEMO_MATERIALS_META:
         src = DEMO_MATERIALS_DIR / fname
@@ -505,8 +509,6 @@ def seed_demo_materials():
         except Exception as e:
             print(f"[SEED] 复制失败 {src}: {e}")
             continue
-        if fname in existing:
-            continue  # 已有 DB 记录，跳过
         ext = src.suffix.lower()
         file_type = "image/jpeg" if ext in (".jpg", ".jpeg") else "image/png"
         item = db.add_material(
@@ -523,6 +525,7 @@ def seed_demo_materials():
     if seeded:
         db._save()
         print(f"[SEED] 已导入 {seeded} 张 Milky 相册素材")
+
 
 def import_default_3d_source_material() -> Optional[int]:
     """从 Milky 照片目录导入一张图片作为 3D 生成默认素材。"""
@@ -648,6 +651,7 @@ async def call_jimeng_api(prompt: str, style: str, output_dir: Path, prefix: str
 
 # ============================================================
 # 硅基流动（SiliconFlow）AI API：看图写小传 + 图生图
+# 从 main(1).py 复刻：
 #   call_siliconflow_vl_api  —— Qwen3-VL 看宠物图生成人物小传
 #   call_siliconflow_api     —— 图生图生成图片（默认 FLUX.1-dev，可配 SILICONFLOW_IMAGE_MODEL）
 # ============================================================
@@ -1689,7 +1693,7 @@ async def generate_goods(req: GenerateGoodsRequest):
         resp = ark_client.images.generate(
             model=ARK_MODEL,
             prompt=prompt,
-            size="2K",
+            size="1024x1024",
             response_format="url",
             extra_body={
                 "image": images,
