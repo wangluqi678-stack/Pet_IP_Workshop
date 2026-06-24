@@ -649,17 +649,15 @@ async def call_jimeng_api(prompt: str, style: str, output_dir: Path, prefix: str
 
 # ============================================================
 # 硅基流动（SiliconFlow）AI API：看图写小传 + 图生图
-# 从 main(1).py 复刻：
 #   call_siliconflow_vl_api  —— Qwen3-VL 看宠物图生成人物小传
 #   call_siliconflow_api     —— 图生图生成图片（默认 FLUX.1-dev，可配 SILICONFLOW_IMAGE_MODEL）
 # ============================================================
 
 # 硅基流动 API Key（复刻自 main(1).py）
 SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
-SILICONFLOW_IMAGE_MODEL = os.getenv("SILICONFLOW_IMAGE_MODEL", "Tongyi-MAI/Z-Image-Turbo")
+SILICONFLOW_IMAGE_MODEL = os.getenv("SILICONFLOW_IMAGE_MODEL", "Tongyi-MAI/Z-Image")
 SILICONFLOW_VL_MODEL = os.getenv("SILICONFLOW_VL_MODEL", "Qwen/Qwen3-VL-8B-Instruct")
 
-# Google Gemini API（免费，每天 1500 次）
 # Ark/火山引擎 Seedream
 ARK_API_KEY = os.getenv("ARK_API_KEY", "")
 ARK_BASE_URL = os.getenv("ARK_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3")
