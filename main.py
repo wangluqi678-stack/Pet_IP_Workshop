@@ -625,12 +625,12 @@ def generate_placeholder_image(target_path: Path, width: int = 512, height: int 
 # ============================================================
 
 # 硅基流动 API Key
-SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "sk-xxqkhuuywtdvelcneecidzpynbqrofrxvoejyuhxzwuhtsaw")
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
 SILICONFLOW_IMAGE_MODEL = os.getenv("SILICONFLOW_IMAGE_MODEL", "Tongyi-MAI/Z-Image-Turbo")
 SILICONFLOW_VL_MODEL = os.getenv("SILICONFLOW_VL_MODEL", "Qwen/Qwen3-VL-8B-Instruct")
 
 # Ark/火山引擎 Seedream
-ARK_API_KEY = os.getenv("ARK_API_KEY", "ark-bb8b2c5c-94f9-45a7-b8b1-9db6187d8721-4b27d")
+ARK_API_KEY = os.getenv("ARK_API_KEY", "")
 ARK_BASE_URL = os.getenv("ARK_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3")
 ARK_MODEL = os.getenv("ARK_MODEL", "doubao-seedream-4-5-251128")
 try:
