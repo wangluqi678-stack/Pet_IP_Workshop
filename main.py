@@ -1699,7 +1699,7 @@ async def generate_goods(req: GenerateGoodsRequest):
             "prompt": prompt,
             "size": "1920x1920", 
             "response_format": "url",
-           "image": images[-1],
+           "image": images,
         }
         async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(
