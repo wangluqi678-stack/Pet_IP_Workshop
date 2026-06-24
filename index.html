@@ -3252,7 +3252,7 @@
                         <div class="hero-copy">
                             <span class="hero-eyebrow">IP WORKSHOP · DROP 01</span>
                             <h2>把 Milky 养成<br><span class="hl">会出圈的潮流 IP</span></h2>
-                            <p>从专属人设到精华短片、卡通漫画与周边设计——在这里，一站式打造你的毛孩子角色宇宙。</p>
+                            <p>从专属人设到精华短片、四格漫画与周边设计——在这里，一站式打造你的毛孩子角色宇宙。</p>
                             <div class="hero-cta">
                                 <button class="btn-dopa btn-dopa-red" onclick="goPage('creation')">进入我的 IP</button>
                                 <button class="btn-dopa btn-dopa-blue" onclick="goPage('custom')">潮玩生成</button>
@@ -3299,7 +3299,7 @@
                                 <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar(this)">
                                 <div class="persona-body">
                                     <div class="persona-eyebrow">动态 IP 人设</div>
-                                    <span class="pa-name" id="ip-name-text">Milky酱</span>
+                                    <span class="pa-name" id="ip-name-text">喵小懒</span>
                                     <div class="persona-headtags">
                                         <span class="tag-style" id="ip-style-text">治愈系 / 萌趣 / 日常生活</span>
                                     </div>
@@ -3339,7 +3339,7 @@
                                         <div style="font-size:12px; color:#fff; margin-bottom:4px;">正在生成短片...</div>
                                         <div class="progress-bar"><div class="progress-fill" style="width:0%;"></div></div>
                                     </div>
-                                    <video id="video-result" src="/static/demo/demo_short.mp4" style="display:block; width:100%; height:100%; object-fit:cover;" controls playsinline loop muted poster="/static/happyhorse-media/first_frame.png"></video>
+                                    <video id="video-result" src="/static/gen_video/happyhorse_ade16c93-bd2a-435c-8380-c87b51645044.mp4" style="display:block; width:100%; height:100%; object-fit:cover;" controls playsinline loop muted poster="/static/happyhorse-media/first_frame.png"></video>
                                 </div>
                                 <p style="color: var(--text-secondary); margin-bottom: 16px;">基于 Milky IP 形象，通过千问 HappyHorse-1.0-I2V（happyhorse-1.0-i2v） 自动生成卡通动漫精华短片</p>
                                 <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
@@ -3383,12 +3383,12 @@
                                     <div id="comic-result-area" style="aspect-ratio: 1 / 1; max-width: 460px; margin: 0 auto 16px; background: var(--bg-dark); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; overflow: hidden; position: relative;">
                                         <span id="comic-placeholder" class="result-ph" style="display:none;">漫画预览</span>
                                         <div id="comic-progress" class="gen-progress" style="display:none; position:absolute; bottom:0; left:0; right:0; padding:12px; background:rgba(0,0,0,0.7);">
-                                            <div style="font-size:12px; color:#fff; margin-bottom:4px;">正在依据生活小传创作卡通漫画...</div>
+                                            <div style="font-size:12px; color:#fff; margin-bottom:4px;">正在依据生活小传创作四格漫画...</div>
                                             <div class="progress-bar"><div class="progress-fill" style="width:0%;"></div></div>
                                         </div>
                                         <img id="comic-result" src="/static/comic/漫画示意.png" style="display:block; width:100%; height:100%; object-fit:contain;" alt="Milky 四格漫画示意">
                                     </div>
-                                    <p style="color: var(--text-secondary); margin-bottom: 16px;">先自动生成「生活小传」故事，再据此创作卡通漫画</p>
+                                    <p style="color: var(--text-secondary); margin-bottom: 16px;">先自动生成「生活小传」故事，再据此创作四格漫画</p>
                                     <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
                                         <button class="btn btn-primary" onclick="generateComic()">生成漫画</button>
                                         <button class="btn btn-secondary" onclick="downloadResult('comic-result','Milky-卡通漫画.png')">下载图片</button>
@@ -3474,7 +3474,6 @@
                                     <div class="sticker-item"><img src="/static/ipmerch/定制帆布包.png" alt="定制帆布包" loading="lazy"><div class="sticker-name">定制帆布包</div><div class="sticker-cat">周边</div></div>
                                     <div class="sticker-item"><img src="/static/ipmerch/马克杯1.png" alt="马克杯1" loading="lazy"><div class="sticker-name">马克杯1</div><div class="sticker-cat">周边</div></div>
                                     <div class="sticker-item"><img src="/static/ipmerch/马克杯2.png" alt="马克杯2" loading="lazy"><div class="sticker-name">马克杯2</div><div class="sticker-cat">周边</div></div>
-                                    <div class="sticker-item"><img src="/static/ipmerch/贴纸.png" alt="贴纸" loading="lazy"><div class="sticker-name">贴纸</div><div class="sticker-cat">周边</div></div>
                                 </div>
                             </div>
                         </div>
@@ -3536,14 +3535,10 @@
                                 </div>
                             </div>
                             <div class="card-body">
-                                <div class="preview-3d" id="preview-3d-container" style="height: 380px; position: relative;">
+                                <div class="preview-3d" id="preview-3d-container" style="height: 380px;">
                                     <div class="preview-3d-content" id="preview-3d-content">
                                         <div class="preview-3d-icon" id="preview-3d-icon">🐱</div>
                                         <p style="color: var(--text-secondary);" id="preview-3d-label">上传照片并生成后，这里可拖拽旋转查看 3D 模型</p>
-                                    </div>
-                                    <div id="toy-progress" class="gen-progress" style="display:none; position:absolute; bottom:0; left:0; right:0; padding:12px; background:rgba(0,0,0,0.7);">
-                                        <div style="font-size:12px; color:#fff; margin-bottom:4px;">Tripo3D 正在依据你的照片生成 3D 潮玩模型，请稍候…</div>
-                                        <div class="progress-bar"><div class="progress-fill" style="width:0%;"></div></div>
                                     </div>
                                 </div>
                                 <div style="display: flex; justify-content: center; gap: 16px; margin-top: 20px;">
@@ -3911,7 +3906,7 @@
                                 </div>
                                 <div class="tab-content" id="works-goods">
                                     <div class="empty-state milky-empty" style="padding: 32px 24px;">
-                                        <img src="/static/milky/ip/3.png" alt="Milky" style="max-width:280px;width:100%;display:block;margin:0 auto 14px;filter:drop-shadow(0 14px 20px rgba(0,0,0,.45));">
+                                        <img src="/static/upload/90c8a0ceebe42d65.png" alt="Milky" style="max-width:280px;width:100%;display:block;margin:0 auto 14px;filter:drop-shadow(0 14px 20px rgba(0,0,0,.45));">
                                         <p style="color: var(--text-secondary);">还没有周边，去IP工坊创作吧</p>
                                     </div>
                                     <div class="media-grid" id="works-goods-grid" style="grid-template-columns: repeat(3, 1fr); display:none;"></div>
@@ -4071,7 +4066,7 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">角色名称</label>
-                    <input type="text" class="form-input" id="edit-profile-name" value="Milky酱">
+                    <input type="text" class="form-input" id="edit-profile-name" value="喵小懒">
                 </div>
                 <div class="form-group">
                     <label class="form-label">风格定位</label>
@@ -4248,7 +4243,7 @@
         // ============================================================
         // API 配置
         // ============================================================
-        const API_BASE = '';
+        const API_BASE = 'http://localhost:8000';
 
         async function api(path, options = {}) {
             const url = API_BASE + path;
@@ -4636,7 +4631,7 @@
         // IP 创作 & 内容生成
         // ============================================================
         let currentIPProfile = {
-            name: 'Milky酱',
+            name: '喵小懒',
             style: '治愈系 / 萌趣 / 日常生活',
             bio: '一只热爱阳光和美食的橘猫，白天喜欢趴在窗台看风景，晚上变身夜行探险家。虽然看起来懒洋洋的，但对美食有着敏锐的嗅觉和执着。',
             avatar_url: ''
@@ -4650,7 +4645,7 @@
             const img = document.getElementById('avatar-img');
             const emoji = document.getElementById('avatar-emoji');
 
-            if (nameEl) nameEl.textContent = currentIPProfile.name || 'Milky酱';
+            if (nameEl) nameEl.textContent = currentIPProfile.name || '喵小懒';
             if (styleEl) styleEl.textContent = currentIPProfile.style || '治愈系 / 萌趣 / 日常生活';
             if (bioEl) bioEl.textContent = currentIPProfile.bio || '暂无简介';
 
@@ -4732,14 +4727,14 @@
         }
 
         function editIPProfile() {
-            document.getElementById('edit-profile-name').value = currentIPProfile.name || 'Milky酱';
+            document.getElementById('edit-profile-name').value = currentIPProfile.name || '喵小懒';
             document.getElementById('edit-profile-style').value = currentIPProfile.style || '治愈系 / 萌趣 / 日常生活';
             document.getElementById('edit-profile-bio').value = currentIPProfile.bio || '';
             showModal('modal-edit-profile');
         }
 
         async function saveIPProfile() {
-            const name = document.getElementById('edit-profile-name').value.trim() || 'Milky酱';
+            const name = document.getElementById('edit-profile-name').value.trim() || '喵小懒';
             const style = document.getElementById('edit-profile-style').value.trim() || '治愈系 / 萌趣 / 日常生活';
             const bio = document.getElementById('edit-profile-bio').value.trim() || '暂无简介';
 
@@ -4782,7 +4777,7 @@
             input.value = '';
         }
 
-        const DEMO_VIDEO_URL = '/static/demo/demo_short.mp4';
+        const DEMO_VIDEO_URL = '/static/gen_video/happyhorse_ade16c93-bd2a-435c-8380-c87b51645044.mp4';
 
         function loadDemoVideo() {
             const placeholder = document.getElementById('video-placeholder');
@@ -4816,7 +4811,7 @@
             }, 1200);
 
             try {
-                const resp = await api('/api/generate/video', {
+                const res = await api('/api/generate/video', {
                     method: 'POST',
                     body: JSON.stringify({
                         prompt: 'Milky 专属宠物 IP 的卡通动漫精华短片，治愈、可爱、故事书质感，轻柔镜头运动，适合社交媒体展示。',
@@ -4824,23 +4819,12 @@
                         ratio: '1280:720'
                     })
                 });
-                const taskId = resp.task_id;
-                if (!taskId) throw new Error('未返回 task_id');
-                // 轮询任务状态
-                let taskData;
-                while (true) {
-                    await sleep(2000);
-                    const statusResp = await api(`/api/generate/video/task/${taskId}`);
-                    taskData = statusResp.data;
-                    if (taskData.status === 'completed') break;
-                    if (taskData.status === 'failed') throw new Error(taskData.error || '视频生成失败');
-                }
                 clearInterval(interval);
                 fill.style.width = '100%';
                 await sleep(400);
                 placeholder.style.display = 'none';
                 progress.style.display = 'none';
-                result.src = API_BASE + taskData.result.url;
+                result.src = API_BASE + res.data.url;
                 result.style.display = 'block';
                 result.load();
                 result.play().catch(() => {});
@@ -4886,7 +4870,7 @@
                     const sres = await api('/api/generate/story', {
                         method: 'POST',
                         body: JSON.stringify({
-                            pet_name: (currentIPProfile && currentIPProfile.name) || 'Milky酱',
+                            pet_name: (currentIPProfile && currentIPProfile.name) || '喵小懒',
                             personality: ['慵懒', '好奇'],
                             style: (currentIPProfile && currentIPProfile.style) || '治愈'
                         })
@@ -4930,7 +4914,7 @@
             try {
                 const res = await api('/api/generate/story', {
                     method: 'POST',
-                    body: JSON.stringify({ pet_name: currentIPProfile.name || 'Milky酱', personality: ['慵懒', '好奇'], style: currentIPProfile.style || '温暖治愈' })
+                    body: JSON.stringify({ pet_name: currentIPProfile.name || '喵小懒', personality: ['慵懒', '好奇'], style: currentIPProfile.style || '温暖治愈' })
                 });
                 if (res.data && res.data.content) {
                     const bio = res.data.content.slice(0, 200) + '...';
@@ -5003,18 +4987,7 @@
                 showToast('请先上传图片', '在「上传素材」中上传一张宠物照片，再生成潮玩', 'error');
                 return;
             }
-            const placeholder = document.getElementById('preview-3d-content');
-            const progress = document.getElementById('toy-progress');
-            const fill = progress.querySelector('.progress-fill');
-
-            placeholder.style.display = 'flex';
-            progress.style.display = 'block';
-            let pct = 0;
-            const interval = setInterval(() => {
-                pct = Math.min(pct + Math.random() * 8, 85);
-                fill.style.width = pct + '%';
-            }, 500);
-
+            showLoading('正在上传素材…');
             try {
                 // 1) 上传用户照片到后端，得到素材 ID
                 const form = new FormData();
@@ -5028,35 +5001,21 @@
                 }
                 const materialId = upJson.data.id;
 
-                // 2) 异步提交 Tripo3D 生成任务，轮询结果
-                const resp = await api('/api/generate/3d', {
+                // 2) 基于该照片调用 Tripo3D 生成 3D 潮玩模型（后端轮询，耗时较长）
+                showLoading('Tripo3D 正在依据你的照片生成 3D 潮玩模型，请稍候…');
+                const generated = await api('/api/generate/3d', {
                     method: 'POST',
                     body: JSON.stringify({ prompt: '可爱的宠物Q版手办', pose: '站立', size: '10cm', material_ids: [materialId] })
                 });
-                const taskId = resp.task_id;
-                if (!taskId) throw new Error('未返回 task_id');
-                // 轮询任务状态
-                let taskData;
-                while (true) {
-                    await sleep(2000);
-                    const statusResp = await api(`/api/generate/3d/task/${taskId}`);
-                    taskData = statusResp.data;
-                    if (taskData.status === 'completed') break;
-                    if (taskData.status === 'failed') throw new Error(taskData.error || '3D 生成失败');
-                }
-                latest3DModel = taskData.result;
-                clearInterval(interval);
-                fill.style.width = '100%';
-                setTimeout(() => { progress.style.display = 'none'; }, 500);
+                latest3DModel = generated.data;
+                hideLoading();
                 // 在 3D 视图里直接渲染可旋转的 GLB
                 const glb = latest3DModel && (latest3DModel.glb_url || (latest3DModel.format === 'glb' ? latest3DModel.url : ''));
                 if (glb && window.renderToyModel) window.renderToyModel(API_BASE + glb);
                 const format = latest3DModel?.format ? latest3DModel.format.toUpperCase() : '模型';
                 showToast('生成成功', `已基于你的照片生成可旋转 3D 模型，可拖拽查看并导出！`);
             } catch (e) {
-                clearInterval(interval);
-                progress.style.display = 'none';
-                placeholder.style.display = 'flex';
+                hideLoading();
                 showToast('生成失败', e.message, 'error');
             }
         }
@@ -5299,9 +5258,9 @@
             if (progress) progress.style.display = 'block';
             if (label) label.textContent = prompt ? '正在按你的提示词生成周边设计...' : '正在按内置提示词生成周边设计...';
             var pct = 0;
-            var iv = setInterval(function(){ pct = Math.min(pct + Math.random() * 8, 82); if (fill) fill.style.width = pct + '%'; }, 500);
+            var iv = setInterval(function(){ pct = Math.min(pct + Math.random() * 10, 88); if (fill) fill.style.width = pct + '%'; }, 500);
             try {
-                // 若上传了素材，先上传到素材库
+                // 若上传了素材，先上传到素材库（成为最新素材 → 据此生成）；否则用素材库第一张
                 if (window.__goodsFile){
                     try {
                         var form = new FormData();
@@ -5309,34 +5268,17 @@
                         form.append('behavior', '周边素材');
                         form.append('emotion', '未知');
                         await fetch(API_BASE + '/api/upload', { method: 'POST', body: form });
-                    } catch (ue) { /* ignore */ }
+                    } catch (ue) { /* 上传失败则回退到素材库第一张 */ }
                 }
-                // 1) 提交异步任务
                 var res = await api('/api/generate/goods', { method: 'POST', body: JSON.stringify({ product: product, prompt: prompt }) });
-                if (!res.task_id){ throw new Error('未返回 task_id'); }
-                if (label) label.textContent = '周边生成中（约 1-2 分钟）...';
-                // 2) 轮询任务状态
-                var taskId = res.task_id;
-                var pollIv = setInterval(function(){ pct = Math.min(pct + Math.random() * 3, 90); if (fill) fill.style.width = pct + '%'; }, 800);
-                var taskRes;
-                while (true){
-                    await sleep(2000);
-                    taskRes = await api('/api/generate/goods/task/' + taskId);
-                    if (taskRes.data.status === 'completed'){ break; }
-                    if (taskRes.data.status === 'failed' || taskRes.data.error){
-                        throw new Error(taskRes.data.error || '生成失败');
-                    }
-                }
-                clearInterval(pollIv);
                 clearInterval(iv);
                 if (fill) fill.style.width = '100%';
-                await sleep(300);
+                await sleep(400);
                 if (progress) progress.style.display = 'none';
-                var taskResult = taskRes.data.result;
-                if (taskResult && taskResult.url){
-                    result.src = API_BASE + taskResult.url;
+                if (res.data && res.data.url){
+                    result.src = API_BASE + res.data.url;
                     result.style.display = 'block';
-                    showToast('生成成功', taskResult.name);
+                    showToast('生成成功', res.data.name);
                     loadGoodsHistory();
                 } else {
                     if (placeholder) placeholder.style.display = 'block';
