@@ -1677,14 +1677,6 @@ async def generate_goods(req: GenerateGoodsRequest):
         mime = "image/png" if latest_image.suffix.lower() == ".png" else "image/jpeg"
         images.append(f"data:{mime};base64,{base64.b64encode(f.read()).decode()}")
 
-    # VL 分析猫
-    cat_desc = await call_siliconflow_vl_api(
-        prompt="", image_path=latest_image, style="",
-        instruction_override="Describe this cat in English: fur color, markings, eye color, ears, face, body. Under 50 words.",
-    )
-    cat_desc = cat_desc.strip()
-    print(f"  Cat: {cat_desc[:100]}...")
-
     prompt = req.prompt or (
         f"图1是产品参考图，图2是猫的照片。"
         f"请学习图1的产品风格、材质、光影和构图，保持这些完全不变。"
