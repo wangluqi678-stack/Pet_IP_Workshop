@@ -8,12 +8,16 @@ import json
 import shutil
 import hashlib
 import base64
+import io
+import mimetypes
 import aiofiles
 from datetime import datetime
 from typing import Optional, Any
 
 from dotenv import load_dotenv
 from openai import OpenAI
+from PIL import Image, ImageFilter, ImageEnhance
+from rembg import remove
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -621,12 +625,12 @@ def generate_placeholder_image(target_path: Path, width: int = 512, height: int 
 # ============================================================
 
 # 硅基流动 API Key
-SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY", "sk-xxqkhuuywtdvelcneecidzpynbqrofrxvoejyuhxzwuhtsaw")
 SILICONFLOW_IMAGE_MODEL = os.getenv("SILICONFLOW_IMAGE_MODEL", "Tongyi-MAI/Z-Image-Turbo")
 SILICONFLOW_VL_MODEL = os.getenv("SILICONFLOW_VL_MODEL", "Qwen/Qwen3-VL-8B-Instruct")
 
 # Ark/火山引擎 Seedream
-ARK_API_KEY = os.getenv("ARK_API_KEY", "")
+ARK_API_KEY = os.getenv("ARK_API_KEY", "ark-bb8b2c5c-94f9-45a7-b8b1-9db6187d8721-4b27d")
 ARK_BASE_URL = os.getenv("ARK_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3")
 ARK_MODEL = os.getenv("ARK_MODEL", "doubao-seedream-4-5-251128")
 try:
@@ -1434,23 +1438,6 @@ async def download_material(filename: str):
 
 
 # ==================== AI 生成：IP 形象 ====================
-
-@app.post("/api/generate/ip")
-async def generate_ip(req: GenerateIPRequest):
-    """
-    调用即梦 AI API 生成宠物 IP 形象。
-    生成多张不同角度的 IP 设计图并保存到 gen_ip 目录。
-    """
-    output_dir = DIRS["gen_ip"]
-    filenames = await call_jimeng_api(req.prompt, req.style, output_dir, "ip")
-
-    items = []
-    for fname in filenames:
-        item = db.add_ip_image(fname, req.prompt, req.style)
-        items.append(item)
-
-    return {"code": 200, "message": "IP 形象生成成功", "data": items}
-
 
 @app.get("/api/generate/ip")
 async def list_ip_images():
