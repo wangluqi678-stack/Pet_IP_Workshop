@@ -5299,9 +5299,9 @@
             if (progress) progress.style.display = 'block';
             if (label) label.textContent = prompt ? '正在按你的提示词生成周边设计...' : '正在按内置提示词生成周边设计...';
             var pct = 0;
-            var iv = setInterval(function(){ pct = Math.min(pct + Math.random() * 10, 88); if (fill) fill.style.width = pct + '%'; }, 500);
+            var iv = setInterval(function(){ pct = Math.min(pct + Math.random() * 8, 82); if (fill) fill.style.width = pct + '%'; }, 500);
             try {
-                // 若上传了素材，先上传到素材库（成为最新素材 → 据此生成）；否则用素材库第一张
+                // 若上传了素材，先上传到素材库
                 if (window.__goodsFile){
                     try {
                         var form = new FormData();
@@ -5309,17 +5309,34 @@
                         form.append('behavior', '周边素材');
                         form.append('emotion', '未知');
                         await fetch(API_BASE + '/api/upload', { method: 'POST', body: form });
-                    } catch (ue) { /* 上传失败则回退到素材库第一张 */ }
+                    } catch (ue) { /* ignore */ }
                 }
+                // 1) 提交异步任务
                 var res = await api('/api/generate/goods', { method: 'POST', body: JSON.stringify({ product: product, prompt: prompt }) });
+                if (!res.task_id){ throw new Error('未返回 task_id'); }
+                if (label) label.textContent = '周边生成中（约 1-2 分钟）...';
+                // 2) 轮询任务状态
+                var taskId = res.task_id;
+                var pollIv = setInterval(function(){ pct = Math.min(pct + Math.random() * 3, 90); if (fill) fill.style.width = pct + '%'; }, 800);
+                var taskRes;
+                while (true){
+                    await sleep(2000);
+                    taskRes = await api('/api/generate/goods/task/' + taskId);
+                    if (taskRes.data.status === 'completed'){ break; }
+                    if (taskRes.data.status === 'failed' || taskRes.data.error){
+                        throw new Error(taskRes.data.error || '生成失败');
+                    }
+                }
+                clearInterval(pollIv);
                 clearInterval(iv);
                 if (fill) fill.style.width = '100%';
-                await sleep(400);
+                await sleep(300);
                 if (progress) progress.style.display = 'none';
-                if (res.data && res.data.url){
-                    result.src = API_BASE + res.data.url;
+                var taskResult = taskRes.data.result;
+                if (taskResult && taskResult.url){
+                    result.src = API_BASE + taskResult.url;
                     result.style.display = 'block';
-                    showToast('生成成功', res.data.name);
+                    showToast('生成成功', taskResult.name);
                     loadGoodsHistory();
                 } else {
                     if (placeholder) placeholder.style.display = 'block';
